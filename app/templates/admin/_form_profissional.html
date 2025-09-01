@@ -1,0 +1,32 @@
+<style>
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .form-group .form-control { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+    .form-group select[multiple] { height: 150px; }
+    .form-group small { color: #6c757d; display: block; margin-top: 5px; }
+    .btn-secondary { background-color: #6c757d; }
+</style>
+
+<div class="form-group">
+    <label for="nome">Nome do Profissional</label>
+    <input type="text" id="nome" name="nome" class="form-control" value="{{ profissional.nome if profissional else '' }}" required>
+</div>
+
+<div class="form-group">
+    <label for="servicos">Serviços Realizados</label>
+    <small>Segure Ctrl (ou Cmd em Mac) para selecionar múltiplos serviços.</small>
+    <select multiple class="form-control" id="servicos" name="servicos">
+        {# Cria uma lista com os IDs dos serviços que o profissional já realiza #}
+        {% set servicos_prof_ids = profissional.servicos|map(attribute='id')|list if profissional %}
+
+        {# Itera sobre todos os serviços da loja para criar as opções #}
+        {% for servico in todos_servicos %}
+            <option value="{{ servico.id }}" {% if servicos_prof_ids and servico.id in servicos_prof_ids %}selected{% endif %}>
+                {{ servico.nome }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+<button type="submit" class="btn btn-primary">{{ 'Salvar Alterações' if profissional else 'Adicionar Profissional' }}</button>
+<a href="{{ url_for('admin.loja_dashboard', loja_id=loja.id) }}" class="btn btn-secondary">Cancelar</a>
