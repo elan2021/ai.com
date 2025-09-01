@@ -208,17 +208,27 @@ def add_profissional(loja_id):
 
     if request.method == 'POST':
         nome = request.form.get('nome')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        commission_percentage = request.form.get('commission_percentage')
         servico_ids = request.form.getlist('servicos')
 
-        if not nome:
-            flash('O nome do profissional é obrigatório.', 'error')
+        if not all([nome, username, password, commission_percentage]):
+            flash('Todos os campos são obrigatórios.', 'error')
+        elif Profissional.query.filter_by(username=username).first():
+            flash('Este nome de usuário já está em uso.', 'error')
         else:
-            novo_profissional = Profissional(nome=nome, loja_id=loja.id)
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            novo_profissional = Profissional(
+                nome=nome,
+                username=username,
+                password_hash=hashed_password,
+                commission_percentage=float(commission_percentage),
+                loja_id=loja.id
+            )
 
-            if servico_ids:
-                # Filtra apenas os serviços que pertencem à loja atual para segurança
-                servicos = Servico.query.filter(Servico.id.in_(servico_ids), Servico.loja_id == loja.id).all()
-                novo_profissional.servicos = servicos
+            servicos = Servico.query.filter(Servico.id.in_(servico_ids), Servico.loja_id == loja.id).all()
+            novo_profissional.servicos = servicos
 
             db.session.add(novo_profissional)
             db.session.commit()
@@ -242,13 +252,25 @@ def edit_profissional(loja_id, profissional_id):
 
     if request.method == 'POST':
         nome = request.form.get('nome')
+        username = request.form.get('username')
+        password = request.form.get('password') # Pode estar em branco
+        commission_percentage = request.form.get('commission_percentage')
         servico_ids = request.form.getlist('servicos')
 
-        if not nome:
-            flash('O nome do profissional é obrigatório.', 'error')
+        # Verifica se o username foi alterado e se o novo já existe
+        if username != profissional.username and Profissional.query.filter_by(username=username).first():
+            flash('Este nome de usuário já está em uso.', 'error')
+        elif not all([nome, username, commission_percentage]):
+            flash('Os campos nome, usuário e comissão são obrigatórios.', 'error')
         else:
             profissional.nome = nome
-            # Filtra apenas os serviços que pertencem à loja atual para segurança
+            profissional.username = username
+            profissional.commission_percentage = float(commission_percentage)
+
+            # Atualiza a senha apenas se uma nova for fornecida
+            if password:
+                profissional.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
             servicos = Servico.query.filter(Servico.id.in_(servico_ids), Servico.loja_id == loja.id).all()
             profissional.servicos = servicos
 
@@ -277,6 +299,29 @@ def delete_profissional(loja_id, profissional_id):
     db.session.commit()
 
     flash('Profissional excluído com sucesso.', 'success')
+    return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
+
+
+@admin_bp.route('/loja/<int:loja_id>/agendamentos/<int:agendamento_id>/pagar-comissao', methods=['POST'])
+@admin_token_required
+def toggle_commission_status(loja_id, agendamento_id):
+    """Alterna o status de pagamento da comissão de um agendamento (pago/pendente)."""
+    loja = Loja.query.get_or_404(loja_id)
+    agendamento = Agendamento.query.get_or_404(agendamento_id)
+
+    if loja.proprietario_id != g.current_user.id or agendamento.loja_id != loja.id:
+        flash('Ação não permitida.', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+    if agendamento.status != 'concluido':
+        flash('Apenas agendamentos concluídos podem ter a comissão paga.', 'error')
+        return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
+
+    agendamento.commission_paid = not agendamento.commission_paid
+    db.session.commit()
+
+    status_text = "paga" if agendamento.commission_paid else "pendente"
+    flash(f'Status da comissão atualizado para {status_text}.', 'success')
     return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
 
 

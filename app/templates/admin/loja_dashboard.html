@@ -57,7 +57,7 @@
                         <th>Serviço</th>
                         <th>Profissional</th>
                         <th>Status</th>
-                        <th>Ações</th>
+                        <th>Ação de Comissão</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,25 +68,31 @@
                             <td>{{ agendamento.cliente_nome }}</td>
                             <td>{{ agendamento.servico.nome }}</td>
                             <td>{{ agendamento.profissional.nome }}</td>
-                        <td>
-                            <form method="POST" action="{{ url_for('admin.update_agendamento_status', loja_id=loja.id, agendamento_id=agendamento.id) }}" class="status-form">
-                                <select name="status" class="status-select" onchange="this.form.submit()">
-                                    {% set statuses = ['pendente', 'confirmado', 'concluido', 'cancelado_cliente', 'cancelado_profissional', 'nao_compareceu'] %}
-                                    {% for status in statuses %}
-                                        <option value="{{ status }}" {% if agendamento.status == status %}selected{% endif %}>
-                                            {{ status.replace('_', ' ')|title }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <noscript><button type="submit">Atualizar</button></noscript>
-                            </form>
-                        </td>
-                        <td>
-                            <!-- Outras ações futuras poderiam ir aqui, como "Ver Detalhes" -->
-                        </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.update_agendamento_status', loja_id=loja.id, agendamento_id=agendamento.id) }}" class="status-form">
+                                    <select name="status" class="status-select" onchange="this.form.submit()" style="padding: 5px; border-radius: 4px;">
+                                        {% set statuses = ['pendente', 'confirmado', 'concluido', 'cancelado_cliente', 'cancelado_profissional', 'nao_compareceu'] %}
+                                        {% for status in statuses %}
+                                            <option value="{{ status }}" {% if agendamento.status == status %}selected{% endif %}>
+                                                {{ status.replace('_', ' ')|title }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <noscript><button type="submit">Atualizar</button></noscript>
+                                </form>
+                            </td>
+                            <td>
+                                {% if agendamento.status == 'concluido' %}
+                                    <form method="POST" action="{{ url_for('admin.toggle_commission_status', loja_id=loja.id, agendamento_id=agendamento.id) }}">
+                                        <button type="submit" class="btn-sm {{ 'btn-secondary' if agendamento.commission_paid else 'btn-success' }}">
+                                            {{ 'Marcar como Pendente' if agendamento.commission_paid else 'Marcar como Paga' }}
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="7" style="text-align:center;">Nenhum agendamento encontrado.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Nenhum agendamento encontrado.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

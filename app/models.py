@@ -48,6 +48,9 @@ class Servico(db.Model):
 class Profissional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=True) # Temporariamente nulo para migração
+    password_hash = db.Column(db.String(128), nullable=True) # Temporariamente nulo para migração
+    commission_percentage = db.Column(db.Numeric(5, 2), nullable=False, default=0.0)
     loja_id = db.Column(db.Integer, db.ForeignKey('loja.id'), nullable=False)
 
     agendamentos = db.relationship('Agendamento', backref='profissional', lazy=True)
@@ -66,6 +69,7 @@ class Agendamento(db.Model):
     cliente_email = db.Column(db.String(120))
     observacoes_cliente = db.Column(db.Text)
     status = db.Column(db.String(50), nullable=False, default='pendente')
+    commission_paid = db.Column(db.Boolean, default=False, nullable=False)
 
     loja_id = db.Column(db.Integer, db.ForeignKey('loja.id'), nullable=False)
     servico_id = db.Column(db.Integer, db.ForeignKey('servico.id'), nullable=False)
