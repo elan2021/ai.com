@@ -51,8 +51,7 @@
             <p class="no-stores">Você ainda não cadastrou nenhuma loja.</p>
         {% endif %}
         <hr>
-        <!-- O link para criar uma nova loja será implementado depois -->
-        <a href="#">+ Adicionar Nova Loja</a>
+        <a href="{{ url_for('admin.add_loja') }}" class="btn btn-primary">+ Adicionar Nova Loja</a>
     </div>
 </div>
 

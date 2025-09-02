@@ -81,6 +81,36 @@ def dashboard():
     return render_template('dashboard.html', lojas=lojas, current_user=g.current_user)
 
 
+@admin_bp.route('/lojas/novo', methods=['GET', 'POST'])
+@admin_token_required
+def add_loja():
+    """Exibe o formulário e processa a criação de uma nova loja."""
+    if request.method == 'POST':
+        title = request.form.get('title')
+        path = request.form.get('path', '').lower().strip()
+
+        # Re-usa a mesma lógica de validação da API de lojas
+        import re
+        if not all([title, path]):
+            flash('Título e Caminho da URL são obrigatórios.', 'error')
+        elif not re.match(r'^[a-z0-9-]+$', path):
+            flash('O caminho (path) deve conter apenas letras minúsculas, números e hífens.', 'error')
+        elif Loja.query.filter_by(path=path).first():
+            flash('Este caminho de loja já está em uso.', 'error')
+        else:
+            nova_loja = Loja(
+                title=title,
+                path=path,
+                proprietario_id=g.current_user.id
+            )
+            db.session.add(nova_loja)
+            db.session.commit()
+            flash('Loja criada com sucesso!', 'success')
+            return redirect(url_for('admin.dashboard'))
+
+    return render_template('add_loja.html', current_user=g.current_user)
+
+
 @admin_bp.route('/loja/<int:loja_id>')
 @admin_token_required
 def loja_dashboard(loja_id):
