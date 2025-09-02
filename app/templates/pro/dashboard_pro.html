@@ -64,13 +64,13 @@
 
                         <!-- Tab Content -->
                         <div id="tab-proximos" class="tab-content mt-6 @container">
-                            {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.proximos, 'tipo': 'proximos'} %}
+                            {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.proximos, 'tipo': 'proximos', 'current_user': current_user} %}
                         </div>
                         <div id="tab-realizados" class="tab-content mt-6 @container hidden">
-                            {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.realizados, 'tipo': 'realizados'} %}
+                            {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.realizados, 'tipo': 'realizados', 'current_user': current_user} %}
                         </div>
                         <div id="tab-cancelados" class="tab-content mt-6 @container hidden">
-                           {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.cancelados, 'tipo': 'cancelados'} %}
+                           {% include 'pro/_tabela_agendamentos.html' with {'agendamentos': agendamentos.cancelados, 'tipo': 'cancelados', 'current_user': current_user} %}
                         </div>
                     </div>
                 </div>

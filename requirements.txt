@@ -1,9 +1,0 @@
-Flask
-Flask-SQLAlchemy
-Flask-Migrate
-Flask-Bcrypt
-PyJWT
-python-dotenv
-Werkzeug
-gunicorn
-requests
