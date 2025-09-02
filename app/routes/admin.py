@@ -222,6 +222,7 @@ def add_profissional(loja_id):
         username = request.form.get('username')
         password = request.form.get('password')
         commission_percentage = request.form.get('commission_percentage')
+        telefone = request.form.get('telefone')
         servico_ids = request.form.getlist('servicos')
 
         if not all([nome, username, password, commission_percentage]):
@@ -233,6 +234,7 @@ def add_profissional(loja_id):
             novo_profissional = Profissional(
                 nome=nome,
                 username=username,
+                telefone=telefone,
                 password_hash=hashed_password,
                 commission_percentage=float(commission_percentage),
                 loja_id=loja.id
@@ -266,6 +268,7 @@ def edit_profissional(loja_id, profissional_id):
         username = request.form.get('username')
         password = request.form.get('password') # Pode estar em branco
         commission_percentage = request.form.get('commission_percentage')
+        telefone = request.form.get('telefone')
         servico_ids = request.form.getlist('servicos')
 
         # Verifica se o username foi alterado e se o novo já existe
@@ -276,6 +279,7 @@ def edit_profissional(loja_id, profissional_id):
         else:
             profissional.nome = nome
             profissional.username = username
+            profissional.telefone = telefone
             profissional.commission_percentage = float(commission_percentage)
 
             # Atualiza a senha apenas se uma nova for fornecida
@@ -347,7 +351,9 @@ def config_loja(loja_id):
 
     if request.method == 'POST':
         chave_pix = request.form.get('chave_pix')
+        webhook_url = request.form.get('webhook_url')
         loja.chave_pix = chave_pix
+        loja.webhook_url = webhook_url
         db.session.commit()
         flash('Configurações salvas com sucesso!', 'success')
         return redirect(url_for('admin.config_loja', loja_id=loja.id))

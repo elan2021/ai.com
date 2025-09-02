@@ -6,3 +6,4 @@ PyJWT
 python-dotenv
 Werkzeug
 gunicorn
+requests

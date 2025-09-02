@@ -40,6 +40,12 @@
                 <input type="text" id="chave_pix" name="chave_pix" class="form-control" value="{{ loja.chave_pix if loja.chave_pix else '' }}">
                 <small>Sua chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória) que será usada para gerar os pagamentos.</small>
             </div>
+            <hr>
+            <div class="form-group">
+                <label for="webhook_url">URL do Webhook</label>
+                <input type="url" id="webhook_url" name="webhook_url" class="form-control" value="{{ loja.webhook_url if loja.webhook_url else '' }}">
+                <small>A URL para onde enviaremos uma notificação POST sempre que um novo agendamento for criado.</small>
+            </div>
             <button type="submit" class="btn btn-primary">Salvar Configurações</button>
         </form>
     </div>

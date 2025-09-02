@@ -25,6 +25,7 @@ class Loja(db.Model):
     path = db.Column(db.String(100), unique=True, nullable=False)
     title = db.Column(db.String(100), nullable=False)
     chave_pix = db.Column(db.String(200), nullable=True)
+    webhook_url = db.Column(db.String(500), nullable=True)
     proprietario_id = db.Column(db.Integer, db.ForeignKey('proprietario.id'), nullable=False)
 
     servicos = db.relationship('Servico', backref='loja', lazy=True, cascade="all, delete-orphan")
@@ -52,6 +53,7 @@ class Servico(db.Model):
 class Profissional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
+    telefone = db.Column(db.String(20), nullable=True)
     username = db.Column(db.String(80), unique=True, nullable=True) # Temporariamente nulo para migração
     password_hash = db.Column(db.String(128), nullable=True) # Temporariamente nulo para migração
     commission_percentage = db.Column(db.Numeric(5, 2), nullable=False, default=0.0)

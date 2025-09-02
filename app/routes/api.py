@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, g, request
+from flask import Blueprint, jsonify, g, request, url_for
 from app.models import Loja, Servico, Profissional, Agendamento, PagamentoSinal
 from app.services import calcular_horarios_disponiveis
+from app.utils import disparar_webhook_agendamento
 from app.db import db
 import datetime
 
@@ -164,6 +165,9 @@ def criar_agendamento():
 
     db.session.add(novo_agendamento)
     db.session.commit()
+
+    # Dispara o webhook em segundo plano
+    disparar_webhook_agendamento(novo_agendamento)
 
     response_data = {'message': 'Agendamento criado com sucesso!', 'agendamento_id': novo_agendamento.id}
     if link_pagamento:

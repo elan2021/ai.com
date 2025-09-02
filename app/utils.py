@@ -48,3 +48,52 @@ def gerar_pix_copia_e_cola(chave_pix, nome_loja, cidade_loja, valor, txid="***")
     crc_fmt = format(crc16 & 0xFFFF, '04X')
 
     return payload + crc_fmt
+
+
+import requests
+import threading
+import json
+from flask import current_app
+
+def _send_webhook_in_background(url, data):
+    """Função executada em segundo plano para enviar o webhook."""
+    try:
+        requests.post(url, data=json.dumps(data, default=str), headers={'Content-Type': 'application/json'}, timeout=10)
+    except requests.exceptions.RequestException as e:
+        # Em um app real, um sistema de logging robusto seria ideal.
+        # Para este exemplo, apenas imprimimos o erro no console do servidor.
+        print(f"ERRO DE WEBHOOK: Falha ao enviar para {url}. Erro: {e}")
+
+def disparar_webhook_agendamento(agendamento):
+    """Prepara os dados e dispara o webhook de agendamento em uma thread separada."""
+    if not agendamento.loja.webhook_url:
+        return
+
+    dados_webhook = {
+        "evento": "novo_agendamento",
+        "agendamento_id": agendamento.id,
+        "data_agendamento": agendamento.data_agendamento,
+        "horario_inicio": agendamento.horario_inicio,
+        "cliente": {
+            "nome": agendamento.cliente_nome,
+            "telefone": agendamento.cliente_telefone,
+            "email": agendamento.cliente_email
+        },
+        "servico": {
+            "id": agendamento.servico.id,
+            "nome": agendamento.servico.nome,
+            "preco": agendamento.servico.preco
+        },
+        "profissional": {
+            "id": agendamento.profissional.id,
+            "nome": agendamento.profissional.nome,
+            "telefone": agendamento.profissional.telefone
+        }
+    }
+
+    # Inicia a thread para enviar o webhook sem bloquear a requisição principal
+    thread = threading.Thread(
+        target=_send_webhook_in_background,
+        args=(agendamento.loja.webhook_url, dados_webhook)
+    )
+    thread.start()
