@@ -121,24 +121,29 @@ def add_servico(loja_id):
         nome = request.form.get('nome')
         preco = request.form.get('preco')
         duracao = request.form.get('duracao')
+        cobrar_sinal = request.form.get('cobrar_sinal') == 'y'
+        percentual_sinal = request.form.get('percentual_sinal')
 
         if not nome or not preco or not duracao:
-            flash('Todos os campos são obrigatórios.', 'error')
-            return render_template('add_servico.html', loja=loja, current_user=g.current_user)
-
-        try:
-            novo_servico = Servico(
-                nome=nome,
-                preco=float(preco),
-                duracao=int(duracao),
-                loja_id=loja.id
-            )
-            db.session.add(novo_servico)
-            db.session.commit()
-            flash('Serviço adicionado com sucesso!', 'success')
-            return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
-        except ValueError:
-            flash('Preço e duração devem ser números válidos.', 'error')
+            flash('Campos básicos são obrigatórios.', 'error')
+        elif cobrar_sinal and (not percentual_sinal or float(percentual_sinal) <= 0):
+            flash('Se a cobrança de sinal estiver ativa, o percentual deve ser maior que zero.', 'error')
+        else:
+            try:
+                novo_servico = Servico(
+                    nome=nome,
+                    preco=float(preco),
+                    duracao=int(duracao),
+                    loja_id=loja.id,
+                    cobrar_sinal=cobrar_sinal,
+                    percentual_sinal=float(percentual_sinal) if cobrar_sinal and percentual_sinal else None
+                )
+                db.session.add(novo_servico)
+                db.session.commit()
+                flash('Serviço adicionado com sucesso!', 'success')
+                return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
+            except (ValueError, TypeError):
+                flash('Valores numéricos inválidos.', 'error')
 
     return render_template('add_servico.html', loja=loja, current_user=g.current_user, servico=None)
 
@@ -158,20 +163,26 @@ def edit_servico(loja_id, servico_id):
         nome = request.form.get('nome')
         preco = request.form.get('preco')
         duracao = request.form.get('duracao')
+        cobrar_sinal = request.form.get('cobrar_sinal') == 'y'
+        percentual_sinal = request.form.get('percentual_sinal')
 
         if not nome or not preco or not duracao:
-            flash('Todos os campos são obrigatórios.', 'error')
-            return render_template('edit_servico.html', loja=loja, servico=servico, current_user=g.current_user)
+            flash('Campos básicos são obrigatórios.', 'error')
+        elif cobrar_sinal and (not percentual_sinal or float(percentual_sinal) <= 0):
+            flash('Se a cobrança de sinal estiver ativa, o percentual deve ser maior que zero.', 'error')
+        else:
+            try:
+                servico.nome = nome
+                servico.preco = float(preco)
+                servico.duracao = int(duracao)
+                servico.cobrar_sinal = cobrar_sinal
+                servico.percentual_sinal = float(percentual_sinal) if cobrar_sinal and percentual_sinal else None
 
-        try:
-            servico.nome = nome
-            servico.preco = float(preco)
-            servico.duracao = int(duracao)
-            db.session.commit()
-            flash('Serviço atualizado com sucesso!', 'success')
-            return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
-        except ValueError:
-            flash('Preço e duração devem ser números válidos.', 'error')
+                db.session.commit()
+                flash('Serviço atualizado com sucesso!', 'success')
+                return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
+            except (ValueError, TypeError):
+                flash('Valores numéricos inválidos.', 'error')
 
     return render_template('edit_servico.html', loja=loja, servico=servico, current_user=g.current_user)
 
@@ -323,6 +334,25 @@ def toggle_commission_status(loja_id, agendamento_id):
     status_text = "paga" if agendamento.commission_paid else "pendente"
     flash(f'Status da comissão atualizado para {status_text}.', 'success')
     return redirect(url_for('admin.loja_dashboard', loja_id=loja.id))
+
+
+@admin_bp.route('/loja/<int:loja_id>/config', methods=['GET', 'POST'])
+@admin_token_required
+def config_loja(loja_id):
+    """Exibe e processa o formulário de configurações da loja (ex: Chave PIX)."""
+    loja = Loja.query.get_or_404(loja_id)
+    if loja.proprietario_id != g.current_user.id:
+        flash('Acesso não permitido.', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+    if request.method == 'POST':
+        chave_pix = request.form.get('chave_pix')
+        loja.chave_pix = chave_pix
+        db.session.commit()
+        flash('Configurações salvas com sucesso!', 'success')
+        return redirect(url_for('admin.config_loja', loja_id=loja.id))
+
+    return render_template('config_loja.html', loja=loja, current_user=g.current_user)
 
 
 @admin_bp.route('/loja/<int:loja_id>/agendamentos/<int:agendamento_id>/status', methods=['POST'])

@@ -17,5 +17,15 @@
     <label for="duracao">Duração (minutos)</label>
     <input type="number" id="duracao" name="duracao" class="form-control" value="{{ servico.duracao if servico else '' }}" required>
 </div>
+<hr>
+<div class="form-group">
+    <input type="checkbox" id="cobrar_sinal" name="cobrar_sinal" value="y" {% if servico and servico.cobrar_sinal %}checked{% endif %}>
+    <label for="cobrar_sinal" style="display: inline-block;">Cobrar Sinal para este Serviço?</label>
+</div>
+<div class="form-group">
+    <label for="percentual_sinal">Percentual do Sinal (%)</label>
+    <input type="number" step="0.01" id="percentual_sinal" name="percentual_sinal" class="form-control" value="{{ servico.percentual_sinal|float if servico and servico.percentual_sinal else '' }}">
+    <small>Ex: 50 para 50%. Deixe em branco ou 0 se não houver cobrança de sinal.</small>
+</div>
 <button type="submit" class="btn btn-primary">{{ 'Salvar Alterações' if servico else 'Adicionar Serviço' }}</button>
 <a href="{{ url_for('admin.loja_dashboard', loja_id=loja.id) }}" class="btn btn-secondary">Cancelar</a>

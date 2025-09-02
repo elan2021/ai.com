@@ -1,5 +1,6 @@
 from .db import db
 import datetime
+import uuid
 
 # Tabela de associação para o relacionamento muitos-para-muitos
 # entre Servico e Profissional.
@@ -23,6 +24,7 @@ class Loja(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.String(100), unique=True, nullable=False)
     title = db.Column(db.String(100), nullable=False)
+    chave_pix = db.Column(db.String(200), nullable=True)
     proprietario_id = db.Column(db.Integer, db.ForeignKey('proprietario.id'), nullable=False)
 
     servicos = db.relationship('Servico', backref='loja', lazy=True, cascade="all, delete-orphan")
@@ -37,6 +39,8 @@ class Servico(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     preco = db.Column(db.Numeric(10, 2), nullable=False)
     duracao = db.Column(db.Integer, nullable=False)  # Duração em minutos
+    cobrar_sinal = db.Column(db.Boolean, default=False, nullable=False)
+    percentual_sinal = db.Column(db.Numeric(5, 2), nullable=True)
     loja_id = db.Column(db.Integer, db.ForeignKey('loja.id'), nullable=False)
 
     profissionais = db.relationship('Profissional', secondary=servicos_profissionais,
@@ -89,3 +93,16 @@ class HorarioTrabalho(db.Model):
 
     def __repr__(self):
         return f'<HorarioTrabalho {self.profissional.nome} - Dia {self.dia_da_semana}>'
+
+
+class PagamentoSinal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    id_publico = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    agendamento_id = db.Column(db.Integer, db.ForeignKey('agendamento.id'), nullable=False)
+    valor = db.Column(db.Numeric(10, 2), nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='pendente') # 'pendente' ou 'pago'
+
+    agendamento = db.relationship('Agendamento', backref=db.backref('pagamento_sinal', uselist=False, cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f'<PagamentoSinal {self.id_publico} - R${self.valor}>'

@@ -43,7 +43,10 @@
     <div class="breadcrumb">
         <a href="{{ url_for('admin.dashboard') }}">Dashboard</a> &gt; {{ loja.title }}
     </div>
-    <h1>Gerenciar Loja: {{ loja.title }}</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Gerenciar Loja: {{ loja.title }}</h1>
+        <a href="{{ url_for('admin.config_loja', loja_id=loja.id) }}" class="btn btn-secondary" style="margin-top: 0;">Configurações da Loja</a>
+    </div>
 
     <div class="card">
         <h2>Próximos Agendamentos</h2>

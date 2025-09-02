@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, g, request
-from app.models import Loja, Servico, Profissional, Agendamento
+from app.models import Loja, Servico, Profissional, Agendamento, PagamentoSinal
 from app.services import calcular_horarios_disponiveis
 from app.db import db
 import datetime
@@ -109,7 +109,7 @@ def listar_horarios_disponiveis():
 
 @api_bp.route('/agendamentos', methods=['POST'])
 def criar_agendamento():
-    """Cria um novo agendamento."""
+    """Cria um novo agendamento e, se necessário, um registro de pagamento de sinal."""
     data = request.get_json()
     required = ['servico_id', 'profissional_id', 'data_agendamento', 'horario_inicio', 'cliente_nome', 'cliente_telefone']
     if not data or not all(f in data for f in required):
@@ -124,7 +124,6 @@ def criar_agendamento():
     if servico not in profissional.servicos:
         return jsonify({'message': 'Este profissional não oferece o serviço selecionado.'}), 400
 
-    # Revalida se o horário está de fato disponível para evitar concorrência
     horarios_disponiveis = calcular_horarios_disponiveis(profissional, servico, data['data_agendamento'])
     if isinstance(horarios_disponiveis, dict) and 'error' in horarios_disponiveis:
          return jsonify({'message': horarios_disponiveis['error']}), 400
@@ -149,10 +148,29 @@ def criar_agendamento():
         cliente_email=data.get('cliente_email'), observacoes_cliente=data.get('observacoes_cliente'),
         status='pendente'
     )
+
+    link_pagamento = None
+    if servico.cobrar_sinal and servico.percentual_sinal > 0:
+        valor_sinal = float(servico.preco) * (float(servico.percentual_sinal) / 100.0)
+        novo_pagamento = PagamentoSinal(
+            agendamento=novo_agendamento,
+            valor=valor_sinal
+        )
+        db.session.add(novo_pagamento)
+        # O id_publico é gerado por default, podemos usá-lo após adicionar à sessão
+        db.session.flush() # Garante que o novo_pagamento tenha seu ID e id_publico populados
+        link_pagamento = url_for('pagamento.realizar_pagamento', id_publico=novo_pagamento.id_publico, _external=True)
+        novo_agendamento.status = 'aguardando_pagamento'
+
     db.session.add(novo_agendamento)
     db.session.commit()
 
-    return jsonify({'message': 'Agendamento criado com sucesso!', 'agendamento_id': novo_agendamento.id}), 201
+    response_data = {'message': 'Agendamento criado com sucesso!', 'agendamento_id': novo_agendamento.id}
+    if link_pagamento:
+        response_data['link_pagamento'] = link_pagamento
+        response_data['message'] = 'Agendamento pré-reservado. Realize o pagamento do sinal para confirmar.'
+
+    return jsonify(response_data), 201
 
 
 @api_bp.route('/agendamentos/<int:agendamento_id>/status', methods=['PATCH'])
@@ -164,7 +182,7 @@ def atualizar_status_agendamento(agendamento_id):
     if not novo_status:
         return jsonify({'message': 'O campo `status` é obrigatório.'}), 400
 
-    allowed = ['pendente', 'confirmado', 'cancelado_cliente', 'cancelado_profissional', 'concluido', 'nao_compareceu']
+    allowed = ['pendente', 'aguardando_pagamento', 'confirmado', 'cancelado_cliente', 'cancelado_profissional', 'concluido', 'nao_compareceu']
     if novo_status not in allowed:
         return jsonify({'message': f'Status inválido. Permitidos: {allowed}'}), 400
 

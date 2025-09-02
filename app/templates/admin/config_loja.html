@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurações - {{ loja.title }}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+        .navbar { background-color: #fff; border-bottom: 1px solid #ddd; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h2 { margin: 0; }
+        .navbar a { color: #333; text-decoration: none; }
+        .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+        h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        .card { background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; }
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9em; color: #6c757d; }
+        .breadcrumb a { text-decoration: none; color: #007bff; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group .form-control { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; transition: background-color 0.2s; display: inline-block; margin-top: 15px; border: none; cursor: pointer; }
+        .btn-primary { background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="{{ url_for('admin.dashboard') }}"><h2>Painel de Administração</h2></a>
+</div>
+
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a> &gt;
+        <a href="{{ url_for('admin.loja_dashboard', loja_id=loja.id) }}">{{ loja.title }}</a> &gt;
+        Configurações
+    </div>
+    <div class="card">
+        <h1>Configurações da Loja</h1>
+        <form method="POST" action="{{ url_for('admin.config_loja', loja_id=loja.id) }}">
+            <div class="form-group">
+                <label for="chave_pix">Chave PIX</label>
+                <input type="text" id="chave_pix" name="chave_pix" class="form-control" value="{{ loja.chave_pix if loja.chave_pix else '' }}">
+                <small>Sua chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória) que será usada para gerar os pagamentos.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
