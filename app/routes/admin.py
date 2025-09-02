@@ -18,7 +18,7 @@ def admin_token_required(f):
         token = request.cookies.get('admin_token')
         if not token:
             flash('É necessário fazer login para acessar esta página.', 'warning')
-            return redirect(url_for('admin.login', next=request.url))
+            return redirect(url_for('main.index'))
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
             # Armazena o usuário atual no 'g' do Flask para acesso fácil nas rotas
@@ -28,45 +28,17 @@ def admin_token_required(f):
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             flash('Sua sessão expirou ou é inválida. Por favor, faça login novamente.', 'error')
             # Limpa o cookie inválido e redireciona para o login
-            resp = make_response(redirect(url_for('admin.login')))
+            resp = make_response(redirect(url_for('main.index')))
             resp.set_cookie('admin_token', '', expires=0)
             return resp
         return f(*args, **kwargs)
     return decorated_function
 
-@admin_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Renderiza a página de login e processa o formulário de login."""
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        proprietario = Proprietario.query.filter_by(username=username).first()
-
-        if not proprietario or not bcrypt.check_password_hash(proprietario.password_hash, password):
-            flash('Credenciais inválidas. Verifique seu usuário e senha.', 'error')
-            return redirect(url_for('admin.login'))
-
-        # Gera o token
-        token = jwt.encode({
-            'proprietario_id': proprietario.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        }, current_app.config['SECRET_KEY'], algorithm="HS256")
-
-        # Cria a resposta, redireciona para o dashboard e define o cookie
-        response = make_response(redirect(url_for('admin.dashboard')))
-        response.set_cookie('admin_token', token, httponly=True, samesite='Lax')
-
-        flash('Login realizado com sucesso!', 'success')
-        return response
-
-    return render_template('login.html')
-
 @admin_bp.route('/logout')
 @admin_token_required
 def logout():
     """Limpa o cookie de autenticação e desloga o usuário."""
-    response = make_response(redirect(url_for('admin.login')))
+    response = make_response(redirect(url_for('main.index')))
     response.set_cookie('admin_token', '', expires=0)
     flash('Você foi desconectado com sucesso.', 'info')
     return response

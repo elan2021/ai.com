@@ -15,7 +15,7 @@ def pro_token_required(f):
         token = request.cookies.get('pro_token')
         if not token:
             flash('É necessário fazer login para acessar esta página.', 'warning')
-            return redirect(url_for('pro.login'))
+            return redirect(url_for('main.index'))
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
             g.current_pro_user = Profissional.query.get(data['profissional_id'])
@@ -23,43 +23,17 @@ def pro_token_required(f):
                 raise jwt.InvalidTokenError
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             flash('Sua sessão expirou ou é inválida. Faça login novamente.', 'error')
-            resp = make_response(redirect(url_for('pro.login')))
+            resp = make_response(redirect(url_for('main.index')))
             resp.set_cookie('pro_token', '', expires=0)
             return resp
         return f(*args, **kwargs)
     return decorated_function
 
-@pro_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Renderiza a página de login e processa a autenticação do profissional."""
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        profissional = Profissional.query.filter_by(username=username).first()
-
-        if not profissional or not profissional.password_hash or not bcrypt.check_password_hash(profissional.password_hash, password):
-            flash('Credenciais inválidas.', 'error')
-            return redirect(url_for('pro.login'))
-
-        token = jwt.encode({
-            'profissional_id': profissional.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        }, current_app.config['SECRET_KEY'], algorithm="HS256")
-
-        response = make_response(redirect(url_for('pro.dashboard')))
-        response.set_cookie('pro_token', token, httponly=True, samesite='Lax')
-
-        flash('Login realizado com sucesso!', 'success')
-        return response
-
-    return render_template('login_pro.html')
-
 @pro_bp.route('/logout')
 @pro_token_required
 def logout():
     """Desloga o profissional limpando o cookie."""
-    response = make_response(redirect(url_for('pro.login')))
+    response = make_response(redirect(url_for('main.index')))
     response.set_cookie('pro_token', '', expires=0)
     flash('Você foi desconectado.', 'info')
     return response
